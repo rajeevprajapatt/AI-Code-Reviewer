@@ -1,26 +1,74 @@
 import * as aiService from '../services/ai_service.js'
 import codeReviewModel from '../models/codeReviewHistory.js'
+import User from '../models/user.js';
 
 export const generateResponse = async (req, res) => {
     try {
-        const { prompt } = req.query;
+        const { prompt } = req.body;
 
-        let newPrompt = prompt + `\n\n\n\n\n Please review the above code and provide feedback on the following points : \n 1. Code Quality \n 2. Code Efficiency \n 3. Code Readability \n 4. Code Maintainability \n 5. Any potential bugs or issues in the code`
-        console.log("running here")
-        const response = await aiService.generateResponse(newPrompt);
-        console.log("response :",response);
+        const response = await aiService.generateResponse(prompt);
+        const userId = await User.getUserId(req.user.email);
 
-        console.log("req.user : ", req.user )
+        if(response.error) {
+            return res.status(400).send({ msg: response.text })
+        }
 
-        // const codeReview = await codeReviewModel.create({
-        //     userId: req.user._id,
-        //     inputCode: prompt,
-        //     outputCode: response
-        // })
-
+        const savedResponse = await codeReviewModel.create({
+            userId: userId,
+            prompt: prompt,
+            title: response?.title,
+            text: response?.text,
+            action: response?.action,
+            suggestions: response?.suggestions ? {
+                reviewCode: response.suggestions.reviewCode || null,
+                explainCode: response.suggestions.explainCode || null,
+                fixBugs: response.suggestions.fixBugs || null,
+                optimization: response.suggestions.optimization || null,
+                optimizatedCode: response.suggestions.optimizatedCode || null
+            } : null
+        })
+        
+        console.log("saved response : ", savedResponse)
         res.status(200).send({ response })
     } catch (error) {
         console.error(error);
         res.status(400).send({ msg: 'Error while generating response' })
     }
 }
+
+export const getDocument = async (req, res) => {
+    const { documentId } = req.body;
+
+    try {
+        const document = await codeReviewModel.findById(documentId);
+        res.status(200).send({ document });
+    } catch (error) {
+        console.error(error);
+        res.status(400).send({ msg: 'Error while fetching document' })
+    }
+}
+
+
+export const getAllResponses = async(req,res) => {
+    try {
+        const responses = await codeReviewModel.find();
+        res.status(200).send({ responses });
+    } catch (error) {
+        console.error(error);
+        res.status(400).send({ msg: 'Error while fetching all responses' })
+    }
+}
+
+export const getUserHistory = async(req,res) => {
+    const userId = await User.getUserId(req.user.email);
+    try {
+        const responses = await codeReviewModel.find({ userId: userId }).select("_id title action updatedAt");
+        
+        console.log("User history : ", responses)
+        res.status(200).send({ responses });    
+    } catch (error) {
+        console.error(error);
+        res.status(400).send({ msg: 'Error while fetching user history' })  
+    }
+}
+
