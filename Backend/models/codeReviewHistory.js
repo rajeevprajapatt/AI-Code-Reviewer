@@ -6,17 +6,20 @@ const codeReviewHistorySchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    inputCode: {
+    prompt: {
         type: String,
-        // required: true
+        required: true
     },
-    outputCode: {
-        type: String,
-        // required: true
-    },
-    date: {
-        type: Date,
-        default: Date.now
+
+    title: String,
+    text: String,
+    action: String,
+    suggestions: {
+        reviewCode: String,
+        explainCode: String,
+        fixBugs: String,
+        optimization: String,
+        optimizatedCode: String
     }
 }, { timestamps: true });
 

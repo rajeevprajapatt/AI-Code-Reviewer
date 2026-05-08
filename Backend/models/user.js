@@ -21,6 +21,9 @@ const userSchema = new mongoose.Schema({
 userSchema.statics.getUser = async function (email) {
     return await this.findOne({ email: email })
 }
+userSchema.statics.getUserId = async function (email) {
+    return await this.findOne({ email: email }).select('_id')
+}
 
 userSchema.statics.hashPassword = async function (password) {
     return await bcrypt.hash(password, 10)
