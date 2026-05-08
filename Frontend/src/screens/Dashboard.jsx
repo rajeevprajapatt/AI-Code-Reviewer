@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from '../config/AxiosInstance';
 import {
     Sparkles, Code2, Play, Bug, Zap, Copy, Check, Loader2, ArrowRight,
     PanelLeft, Search, Clock, MessageSquare, ChevronRight,
@@ -8,16 +9,126 @@ import {
 // --- Main App Interface ---
 
 const Dashboard = () => {
+    const [userId, setUserId] = useState(() => {
+        return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))._id : null
+    }); // Simulated logged-in user ID
+
+    const [MOCK_HISTORY, setMOCK_HISTORY] = useState([]);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const res = await axios.get('/ai/getHistory');
+                setMOCK_HISTORY(res.data.responses);
+            } catch (error) {
+                console.error("Error fetching user history:", error);
+            }
+        }
+        fetchHistory();
+    }, [])
+
+    console.log(MOCK_HISTORY)
+
     const [code, setCode] = useState("");
     const [output, setOutput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [activeAction, setActiveAction] = useState(null);
     const [isCopied, setIsCopied] = useState(false);
+    const [responses, setResponses] = useState({});
+
+    const handlehistoryModification = (oldPrompt, newPrompt) => {
+        let spl1 = oldPrompt.split(" ");
+        let spl2 = newPrompt.split(" ");
+
+        let filterOldPrompt = spl2.filter(item => item.length > 0)
+
+        let isMatch = spl1.length == filterOldPrompt.length && spl1.every((val, i) => val == filterOldPrompt[i]);
+
+        return isMatch;
+    }
+
+    const handleReviewCode = async () => {
+        if (!activeHistoryId) {
+            const generateResponse = async () => {
+                const res = await axios.post('/ai/getAiResult', { prompt: code });
+                console.log("AI response : ", res.data.response)
+                setResponses(res.data.response);
+                setIsLoading(false);
+                setCode(res.data.response.prompt);
+                setOutput(res.data.response.text);
+                setResponses(res.data.response);
+                setActiveHistoryId(res.data.response._id);
+            }
+            generateResponse();
+            console.log("Code responses : ", responses)
+            // const newResponse = await axios.post('/ai/getAiResult', { prompt: code });
+        }
+        else {
+            if (handlehistoryModification(responses.prompt, code)) {
+                const getResponse = async () => {
+                    const res = await axios.post('/ai/getDocument', { documentId: activeHistoryId });
+                    console.log("AI response : ", res.data.response)
+                    setResponses(res.data.response);
+                    setIsLoading(false);
+                    setCode(res.data.response.prompt);
+                    setOutput(res.data.response.text);
+                    setResponses(res.data.response);
+                }
+                getResponse();
+            } 
+            else{
+                const generateResponse = async () => {
+                    const res = await axios.post('/ai/getAiResult', { prompt: code });
+                    console.log("AI response : ", res.data.response)
+                    setResponses(res.data.response);
+                    setIsLoading(false);
+                    setCode(res.data.response.prompt);
+                    setOutput(res.data.response.text);
+                    setResponses(res.data.response);
+                    setActiveHistoryId(res.data.response._id);
+                }
+                generateResponse();
+                console.log("Code responses : ", responses)
+                // const newResponse = await axios.post('/ai/getAiResult', { prompt: code });
+            }
+        }
+    }
+
+    // useEffect(() => {
+    //     if(!activeHistoryId) {
+    //         const generateResponse = async() => {
+    //             const res = await axios.post('/ai/getAiResult', { prompt: code });
+    //             console.log("AI response : ", res.data.response)
+    //             setResponses(res.data.response);    
+    //             setIsLoading(false);
+    //             setCode(res.data.response.prompt);
+    //             setOutput(res.data.response.text);
+    //             setResponses(res.data.response);
+    //         }
+    //         generateResponse();
+    //         console.log("Code responses : ", responses)
+    //         // const newResponse = await axios.post('/ai/getAiResult', { prompt: code });
+    //     }
+    //     else{
+    //         const getResponse = async() => {
+    //             const res = await axios.post('/ai/getDocument', { documentId: activeHistoryId });
+    //             console.log("AI response : ", res.data.response)
+    //             setResponses(res.data.response);    
+    //             setIsLoading(false);
+    //             setCode(res.data.response.prompt);
+    //             setOutput(res.data.response.text);
+    //             setResponses(res.data.response);
+    //         }
+    //         getResponse();
+    //     }
+    // })
 
     // New Sidebar State
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeHistoryId, setActiveHistoryId] = useState(null);
+
+    console.log("Active history : ", activeHistoryId)
 
     // Filter history based on search
     const filteredHistory = MOCK_HISTORY.filter(item =>
@@ -36,12 +147,17 @@ const Dashboard = () => {
             setIsLoading(false);
             setActiveAction(null);
 
-            const responses = {
-                'Review Code': "### Code Review Summary\n\nYour code structure is generally good, but there are a few areas for improvement:\n\n1. **Type Safety:** Consider adding standard interfaces for your data payload.\n2. **Error Handling:** There is no try/catch block around the main logic.\n3. **Naming Conventions:** Variable names could be more descriptive.\n\nOverall Rating: 7.5/10",
-                'Explain Code': "### Code Explanation\n\nThis snippet appears to be a functional block that iterates through a dataset. \n\nIt takes an array as an input, maps over the items, and returns a transformed set of values. The time complexity of this operation is O(N) where N is the length of the input array.",
-                'Fix Bugs': "### Bug Fixes Applied\n\nI found 1 critical issue and fixed it:\n\n- Fixed an off-by-one error in the loop boundary (`<=` changed to `<`).\n- Added null-checking before accessing the array properties to prevent runtime crashes.",
-                'Optimize Code': "### Optimizations\n\n- **Memory:** Replaced the standard `for` loop with a higher-order `.map()` function to prevent mutating external state.\n- **Performance:** Memoized the return value to prevent unnecessary re-renders."
-            };
+            // const responses = {
+            //     'Review Code': "### Code Review Summary\n\nYour code structure is generally good, but there are a few areas for improvement:\n\n1. **Type Safety:** Consider adding standard interfaces for your data payload.\n2. **Error Handling:** There is no try/catch block around the main logic.\n3. **Naming Conventions:** Variable names could be more descriptive.\n\nOverall Rating: 7.5/10",
+            //     'Explain Code': "### Code Explanation\n\nThis snippet appears to be a functional block that iterates through a dataset. \n\nIt takes an array as an input, maps over the items, and returns a transformed set of values. The time complexity of this operation is O(N) where N is the length of the input array.",
+            //     'Fix Bugs': "### Bug Fixes Applied\n\nI found 1 critical issue and fixed it:\n\n- Fixed an off-by-one error in the loop boundary (`<=` changed to `<`).\n- Added null-checking before accessing the array properties to prevent runtime crashes.",
+            //     'Optimize Code': "### Optimizations\n\n- **Memory:** Replaced the standard `for` loop with a higher-order `.map()` function to prevent mutating external state.\n- **Performance:** Memoized the return value to prevent unnecessary re-renders."
+            // };
+
+            if (responses[actionName]) {
+                console.log(responses[actionName])
+                //  = `### ${actionName} Summary\n\n${responses[actionName]}`;
+            }
 
             setOutput(responses[actionName]);
         }, 2000);
@@ -54,9 +170,11 @@ const Dashboard = () => {
     };
 
     const loadHistoryItem = (item) => {
-        setActiveHistoryId(item.id);
-        setCode(`// Loaded from history: ${item.title}\nfunction example() {\n  return "This is a mock loaded state";\n}`);
-        setOutput(`### Historical Result\n\nThis is the cached output for the **${item.action}** action performed on ${item.time}.`);
+        setActiveHistoryId(item._id);
+        setCode(item.prompt);
+        setOutput(responses.text)
+        // setCode(`// Loaded from history: ${item.title}\nfunction example() {\n  return "This is a mock loaded state";\n}`);
+        // setOutput(`### Historical Result\n\nThis is the cached output for the **${item.action}** action performed on ${item.time}.`);
     };
 
     return (
@@ -121,8 +239,9 @@ const Dashboard = () => {
                             </div>
                         ) : (
                             filteredHistory.map((item) => (
+                                item.action &&
                                 <button
-                                    key={item.id}
+                                    key={item._id}
                                     onClick={() => loadHistoryItem(item)}
                                     className={`w-full text-left px-3 py-2.5 rounded-md flex items-start gap-3 transition-colors group ${activeHistoryId === item.id
                                         ? 'bg-blue-50'
@@ -140,7 +259,7 @@ const Dashboard = () => {
                                             </span>
                                             <span className="text-slate-300">•</span>
                                             <span className="text-slate-400 flex items-center shrink-0">
-                                                <Clock className="h-3 w-3 mr-1" /> {item.time}
+                                                <Clock className="h-3 w-3 mr-1" /> {timeAgo(item.updatedAt)}
                                             </span>
                                         </div>
                                     </div>
@@ -183,8 +302,12 @@ const Dashboard = () => {
                             {/* Action Buttons */}
                             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 pt-4 shrink-0">
                                 <Button
-                                    onClick={() => handleAction('Review Code')}
-                                    disabled={isLoading || !code.trim()}
+                                    onClick={() => {
+                                        handleAction('Review Code')
+                                        handleReviewCode();
+                                    }
+                                    }
+                                    disabled={isLoading || !code}
                                     className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                                 >
                                     {activeAction === 'Review Code' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
@@ -300,10 +423,63 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
 };
 
 // --- Mock History Data ---
-const MOCK_HISTORY = [
-    { id: 1, title: 'Auth Component Bug Fix', time: '10 mins ago', action: 'Fix Bugs' },
-    { id: 2, title: 'Data Sorting Algorithm', time: '2 hours ago', action: 'Optimize Code' },
-    { id: 3, title: 'React Navbar Review', time: 'Yesterday', action: 'Review Code' },
-    { id: 4, title: 'API Fetch Explanation', time: '2 days ago', action: 'Explain Code' },
-    { id: 5, title: 'Legacy User Model', time: 'Last week', action: 'Review Code' },
-];
+// const MOCK_HISTORY = [
+//     { id: 1, title: 'Auth Component Bug Fix', time: '10 mins ago', action: 'Fix Bugs' },
+//     { id: 2, title: 'Data Sorting Algorithm', time: '2 hours ago', action: 'Optimize Code' },
+//     { id: 3, title: 'React Navbar Review', time: 'Yesterday', action: 'Review Code' },
+//     { id: 4, title: 'API Fetch Explanation', time: '2 days ago', action: 'Explain Code' },
+//     { id: 5, title: 'Legacy User Model', time: 'Last week', action: 'Review Code' },
+// ];
+
+function timeAgo(timestamp) {
+    console.log(timestamp)
+    const now = new Date();
+    const past = new Date(timestamp);
+
+    const diffInSeconds = Math.floor((now - past) / 1000);
+
+    const minute = 60;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const week = 7 * day;
+    const month = 30 * day;
+
+    if (diffInSeconds < minute) {
+        return `${diffInSeconds} sec ago`;
+    }
+
+    if (diffInSeconds < hour) {
+        const mins = Math.floor(diffInSeconds / minute);
+        return `${mins} min ago`;
+    }
+
+    if (diffInSeconds < day) {
+        const hours = Math.floor(diffInSeconds / hour);
+        return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    }
+
+    if (diffInSeconds < 2 * day) {
+        return "Yesterday";
+    }
+
+    if (diffInSeconds < week) {
+        const days = Math.floor(diffInSeconds / day);
+        return `${days} days ago`;
+    }
+
+    if (diffInSeconds < 2 * week) {
+        return "Last week";
+    }
+
+    if (diffInSeconds < month) {
+        const weeks = Math.floor(diffInSeconds / week);
+        return `${weeks} weeks ago`;
+    }
+
+    if (diffInSeconds < 2 * month) {
+        return "Last month";
+    }
+
+    const months = Math.floor(diffInSeconds / month);
+    return `${months} months ago`;
+}
