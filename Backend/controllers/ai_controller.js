@@ -9,7 +9,7 @@ export const generateResponse = async (req, res) => {
         const response = await aiService.generateResponse(prompt);
         const userId = await User.getUserId(req.user.email);
 
-        if(response.error) {
+        if (response.error) {
             return res.status(400).send({ msg: response.text })
         }
 
@@ -27,7 +27,7 @@ export const generateResponse = async (req, res) => {
                 optimizatedCode: response.suggestions.optimizatedCode || null
             } : null
         })
-        
+
         console.log("saved response : ", savedResponse)
         res.status(200).send({ response })
     } catch (error) {
@@ -41,7 +41,8 @@ export const getDocument = async (req, res) => {
 
     try {
         const document = await codeReviewModel.findById(documentId);
-        res.status(200).send({ document });
+
+        res.status(200).send({ response: document });
     } catch (error) {
         console.error(error);
         res.status(400).send({ msg: 'Error while fetching document' })
@@ -49,7 +50,7 @@ export const getDocument = async (req, res) => {
 }
 
 
-export const getAllResponses = async(req,res) => {
+export const getAllResponses = async (req, res) => {
     try {
         const responses = await codeReviewModel.find();
         res.status(200).send({ responses });
@@ -59,16 +60,16 @@ export const getAllResponses = async(req,res) => {
     }
 }
 
-export const getUserHistory = async(req,res) => {
+export const getUserHistory = async (req, res) => {
     const userId = await User.getUserId(req.user.email);
     try {
         const responses = await codeReviewModel.find({ userId: userId }).select("_id title action updatedAt");
-        
+
         console.log("User history : ", responses)
-        res.status(200).send({ responses });    
+        res.status(200).send({ responses });
     } catch (error) {
         console.error(error);
-        res.status(400).send({ msg: 'Error while fetching user history' })  
+        res.status(400).send({ msg: 'Error while fetching user history' })
     }
 }
 
