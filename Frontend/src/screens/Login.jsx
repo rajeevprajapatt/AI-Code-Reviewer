@@ -45,9 +45,9 @@ const Login = () => {
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-blue-200">
 
             {/* Background Gradient (matches landing page hero) */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100 via-slate-50 to-slate-50 -z-10" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-100 via-slate-50 to-slate-50 -z-10" />
 
-            <div className="w-full max-w-[400px]">
+            <div className="w-full max-w-100">
                 {/* Logo Area */}
                 <div className="flex flex-col items-center mb-8 text-center">
                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm mb-4">

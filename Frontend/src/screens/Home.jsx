@@ -70,7 +70,7 @@ const CodeReviewerLanding = () => {
 
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-24 pb-32">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100 via-slate-50 to-slate-50 -z-10" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-100 via-slate-50 to-slate-50 -z-10" />
                 <div className="container mx-auto px-4 text-center">
                     <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-600 mb-8">
                         <Sparkles className="h-4 w-4 mr-2" />
@@ -78,7 +78,7 @@ const CodeReviewerLanding = () => {
                     </div>
                     <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 text-slate-900">
                         Review Your Code with <br className="hidden md:block" />
-                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                             AI in Seconds
                         </span>
                     </h1>
@@ -161,7 +161,7 @@ const CodeReviewerLanding = () => {
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold mb-16">How it works</h2>
                     <div className="grid md:grid-cols-3 gap-8 relative">
-                        <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-blue-200 to-purple-200"></div>
+                        <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 bg-linear-to-r from-blue-200 to-purple-200"></div>
                         {[
                             { step: "01", title: "Paste your code", desc: "Drop your snippet or connect your GitHub repository directly." },
                             { step: "02", title: "AI analyzes context", desc: "Our models process your logic, dependencies, and architecture." },
@@ -195,7 +195,7 @@ const CodeReviewerLanding = () => {
                             <textarea
                                 value={demoCode}
                                 onChange={(e) => setDemoCode(e.target.value)}
-                                className="w-full h-[300px] bg-[#1e1e1e] text-slate-300 font-mono p-4 text-sm resize-none focus:outline-none"
+                                className="w-full h-75 bg-[#1e1e1e] text-slate-300 font-mono p-4 text-sm resize-none focus:outline-none"
                                 spellCheck="false"
                             />
                             <div className="p-4 bg-white border-t border-slate-100 flex justify-end">
@@ -206,7 +206,7 @@ const CodeReviewerLanding = () => {
                             </div>
                         </Card>
 
-                        <Card className="shadow-lg border-slate-200 min-h-[400px] flex flex-col">
+                        <Card className="shadow-lg border-slate-200 min-h-100 flex flex-col">
                             <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center">
                                 <span className="text-xs text-slate-500 font-medium font-mono uppercase tracking-wider">AI Analysis Output</span>
                             </div>

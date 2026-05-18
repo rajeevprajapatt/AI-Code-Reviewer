@@ -12,8 +12,21 @@ const Dashboard = () => {
     const [userId, setUserId] = useState(() => {
         return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))._id : null
     }); // Simulated logged-in user ID
+    
+    const [code, setCode] = useState("");
+    const [output, setOutput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeAction, setActiveAction] = useState(null);
+    const [isCopied, setIsCopied] = useState(false);
+    const [responses, setResponses] = useState({});
+       
+    // New Sidebar State
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [activeHistoryId, setActiveHistoryId] = useState(null);
 
     const [MOCK_HISTORY, setMOCK_HISTORY] = useState([]);
+
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -25,23 +38,13 @@ const Dashboard = () => {
             }
         }
         fetchHistory();
-    }, [])
-
-    console.log(MOCK_HISTORY)
-
-    const [code, setCode] = useState("");
-    const [output, setOutput] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [activeAction, setActiveAction] = useState(null);
-    const [isCopied, setIsCopied] = useState(false);
-    const [responses, setResponses] = useState({});
+    }, []);
 
     const handlehistoryModification = (oldPrompt, newPrompt) => {
         let spl1 = oldPrompt.split(" ");
         let spl2 = newPrompt.split(" ");
 
-        let filterOldPrompt = spl2.filter(item => item.length > 0)
-
+        let filterOldPrompt = spl2.filter(item => item.length > 0);
         let isMatch = spl1.length == filterOldPrompt.length && spl1.every((val, i) => val == filterOldPrompt[i]);
 
         return isMatch;
@@ -61,7 +64,6 @@ const Dashboard = () => {
             }
             generateResponse();
             console.log("Code responses : ", responses)
-            // const newResponse = await axios.post('/ai/getAiResult', { prompt: code });
         }
         else {
             if (handlehistoryModification(responses.prompt, code)) {
@@ -75,8 +77,8 @@ const Dashboard = () => {
                     setResponses(res.data.response);
                 }
                 getResponse();
-            } 
-            else{
+            }
+            else {
                 const generateResponse = async () => {
                     const res = await axios.post('/ai/getAiResult', { prompt: code });
                     console.log("AI response : ", res.data.response)
@@ -89,46 +91,9 @@ const Dashboard = () => {
                 }
                 generateResponse();
                 console.log("Code responses : ", responses)
-                // const newResponse = await axios.post('/ai/getAiResult', { prompt: code });
             }
         }
     }
-
-    // useEffect(() => {
-    //     if(!activeHistoryId) {
-    //         const generateResponse = async() => {
-    //             const res = await axios.post('/ai/getAiResult', { prompt: code });
-    //             console.log("AI response : ", res.data.response)
-    //             setResponses(res.data.response);    
-    //             setIsLoading(false);
-    //             setCode(res.data.response.prompt);
-    //             setOutput(res.data.response.text);
-    //             setResponses(res.data.response);
-    //         }
-    //         generateResponse();
-    //         console.log("Code responses : ", responses)
-    //         // const newResponse = await axios.post('/ai/getAiResult', { prompt: code });
-    //     }
-    //     else{
-    //         const getResponse = async() => {
-    //             const res = await axios.post('/ai/getDocument', { documentId: activeHistoryId });
-    //             console.log("AI response : ", res.data.response)
-    //             setResponses(res.data.response);    
-    //             setIsLoading(false);
-    //             setCode(res.data.response.prompt);
-    //             setOutput(res.data.response.text);
-    //             setResponses(res.data.response);
-    //         }
-    //         getResponse();
-    //     }
-    // })
-
-    // New Sidebar State
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [activeHistoryId, setActiveHistoryId] = useState(null);
-
-    console.log("Active history : ", activeHistoryId)
 
     // Filter history based on search
     const filteredHistory = MOCK_HISTORY.filter(item =>
@@ -141,40 +106,36 @@ const Dashboard = () => {
 
         setIsLoading(true);
         setActiveAction(actionName);
+        console.log(`Action triggered: ${actionName}`);
+        console.log("Response action exist : ", responses.suggestions[actionName])
 
         // Simulate API delay
         setTimeout(() => {
             setIsLoading(false);
-            setActiveAction(null);
+            // setActiveAction(null);
 
-            // const responses = {
-            //     'Review Code': "### Code Review Summary\n\nYour code structure is generally good, but there are a few areas for improvement:\n\n1. **Type Safety:** Consider adding standard interfaces for your data payload.\n2. **Error Handling:** There is no try/catch block around the main logic.\n3. **Naming Conventions:** Variable names could be more descriptive.\n\nOverall Rating: 7.5/10",
-            //     'Explain Code': "### Code Explanation\n\nThis snippet appears to be a functional block that iterates through a dataset. \n\nIt takes an array as an input, maps over the items, and returns a transformed set of values. The time complexity of this operation is O(N) where N is the length of the input array.",
-            //     'Fix Bugs': "### Bug Fixes Applied\n\nI found 1 critical issue and fixed it:\n\n- Fixed an off-by-one error in the loop boundary (`<=` changed to `<`).\n- Added null-checking before accessing the array properties to prevent runtime crashes.",
-            //     'Optimize Code': "### Optimizations\n\n- **Memory:** Replaced the standard `for` loop with a higher-order `.map()` function to prevent mutating external state.\n- **Performance:** Memoized the return value to prevent unnecessary re-renders."
-            // };
-
-            if (responses[actionName]) {
-                console.log(responses[actionName])
-                //  = `### ${actionName} Summary\n\n${responses[actionName]}`;
-            }
-
-            setOutput(responses[actionName]);
+            setOutput(responses.suggestions[actionName]);
         }, 2000);
     };
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(output);
+        navigator.clipboard.writeText(responses.suggestions.optimizatedCode);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
     };
 
     const loadHistoryItem = (item) => {
         setActiveHistoryId(item._id);
-        setCode(item.prompt);
-        setOutput(responses.text)
-        // setCode(`// Loaded from history: ${item.title}\nfunction example() {\n  return "This is a mock loaded state";\n}`);
-        // setOutput(`### Historical Result\n\nThis is the cached output for the **${item.action}** action performed on ${item.time}.`);
+
+        const fetchHistoryItem = async () => {
+            console.log("Fetching document for history item : ", item._id)
+            const doc = await axios.post('/ai/getAiDocument', { documentId: item._id });
+            setResponses(doc.data.response);
+            setCode(doc.data.response.prompt);
+            setOutput(doc.data.response.text);
+            console.log("Loaded history item : ", doc.data.response)
+        }
+        fetchHistoryItem();
     };
 
     return (
@@ -209,11 +170,11 @@ const Dashboard = () => {
             <div className="flex-1 flex overflow-hidden relative">
 
                 {/* Subtle Background Gradient */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-slate-50 -z-10 pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-slate-50 -z-10 pointer-events-none" />
 
                 {/* SIDEBAR: History / Searches */}
                 <aside
-                    className={`flex-shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ease-in-out z-10 ${isSidebarOpen ? 'w-64 md:w-72 translate-x-0' : 'w-0 -translate-x-full opacity-0 overflow-hidden'
+                    className={`shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ease-in-out z-10 ${isSidebarOpen ? 'w-64 md:w-72 translate-x-0' : 'w-0 -translate-x-full opacity-0 overflow-hidden'
                         }`}
                 >
                     {/* Sidebar Header / Search */}
@@ -242,8 +203,11 @@ const Dashboard = () => {
                                 item.action &&
                                 <button
                                     key={item._id}
-                                    onClick={() => loadHistoryItem(item)}
-                                    className={`w-full text-left px-3 py-2.5 rounded-md flex items-start gap-3 transition-colors group ${activeHistoryId === item.id
+                                    onClick={() => {
+                                        console.log("Clicked history item : ", item),
+                                            loadHistoryItem(item)
+                                    }}
+                                    className={`w-full text-left px-3 py-2.5 cursor-pointer rounded-md flex items-start gap-3 transition-colors group ${activeHistoryId === item.id
                                         ? 'bg-blue-50'
                                         : 'hover:bg-slate-50'
                                         }`}
@@ -303,38 +267,38 @@ const Dashboard = () => {
                             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 pt-4 shrink-0">
                                 <Button
                                     onClick={() => {
-                                        handleAction('Review Code')
+                                        handleAction('reviewCode')
                                         handleReviewCode();
                                     }
                                     }
-                                    disabled={isLoading || !code}
+                                    disabled={isLoading || !code || !responses.suggestions?.reviewCode}
                                     className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                                 >
-                                    {activeAction === 'Review Code' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                                    {activeAction === 'reviewCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
                                     Review
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => handleAction('Explain Code')}
-                                    disabled={isLoading || !code.trim()}
+                                    onClick={() => handleAction('explainCode')}
+                                    disabled={isLoading || !code || !responses.suggestions?.explainCode}
                                 >
-                                    {activeAction === 'Explain Code' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Sparkles className="w-4 h-4 mr-2 text-slate-500" />}
+                                    {activeAction === 'explainCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Sparkles className="w-4 h-4 mr-2 text-slate-500" />}
                                     Explain
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => handleAction('Fix Bugs')}
-                                    disabled={isLoading || !code.trim()}
+                                    onClick={() => handleAction('fixBugs')}
+                                    disabled={isLoading || !code || !responses.suggestions?.fixBugs}
                                 >
-                                    {activeAction === 'Fix Bugs' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Bug className="w-4 h-4 mr-2 text-slate-500" />}
+                                    {activeAction === 'fixBugs' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Bug className="w-4 h-4 mr-2 text-slate-500" />}
                                     Fix Bugs
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => handleAction('Optimize Code')}
-                                    disabled={isLoading || !code.trim()}
+                                    onClick={() => handleAction('optimization')}
+                                    disabled={isLoading || !code || !responses.suggestions?.optimization}
                                 >
-                                    {activeAction === 'Optimize Code' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Zap className="w-4 h-4 mr-2 text-slate-500" />}
+                                    {activeAction === 'optimization' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Zap className="w-4 h-4 mr-2 text-slate-500" />}
                                     Optimize
                                 </Button>
                             </div>
@@ -363,7 +327,7 @@ const Dashboard = () => {
                                         <ArrowRight className="w-8 h-8 text-slate-300" />
                                     </div>
                                     <p className="text-sm font-medium text-slate-600">Workspace Ready</p>
-                                    <p className="text-xs text-slate-400 mt-1 max-w-[200px]">Paste your code on the left and select an action to begin.</p>
+                                    <p className="text-xs text-slate-400 mt-1 max-w-50">Paste your code on the left and select an action to begin.</p>
                                 </div>
                             )}
 
@@ -381,6 +345,27 @@ const Dashboard = () => {
                                             {output}
                                         </pre>
                                     </div>
+                                    <div className='pt-7' />
+                                    {activeAction == 'optimization' &&
+                                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 md:p-6 shadow-sm">
+                                            <p className='pb-2'>Optiomized Code</p>
+                                            <div className="flex-1 rounded-lg border border-slate-200 overflow-hidden bg-[#1e1e1e] shadow-inner flex flex-col">
+                                                <div className="h-8 bg-[#2d2d2d] flex items-center px-3 gap-1.5 shrink-0 border-b border-[#3d3d3d]">
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                                                    <span className="ml-2 text-xs text-slate-400 font-mono">Review.js</span>
+                                                </div>
+                                                <textarea
+                                                    value={responses.suggestions.optimizatedCode || ""}
+                                                    readOnly
+                                                    // placeholder="Paste your code here..."
+                                                    className="flex-1 w-full bg-transparent text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0"
+                                                    spellCheck="false"
+                                                />
+                                            </div>
+                                        </div>
+                                    }
                                 </div>
                             )}
                         </div>
@@ -432,7 +417,7 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
 // ];
 
 function timeAgo(timestamp) {
-    console.log(timestamp)
+    // console.log(timestamp)
     const now = new Date();
     const past = new Date(timestamp);
 
