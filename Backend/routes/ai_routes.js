@@ -11,4 +11,6 @@ router.get('/getAllResponses', aiController.getAllResponses)
 
 router.get('/getHistory', userAuth.authMiddleware, aiController.getUserHistory)
 
+router.post('/updateDocument', userAuth.authMiddleware, aiController.updateDocument)
+
 export default router;
