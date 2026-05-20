@@ -9,7 +9,7 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     const decode = jwt.verify(token, process.env.SECRET_KEY)
-    console.log('decode : ', decode)
+    // console.log('decode : ', decode)
     req.user = decode;
     next();
 }
