@@ -49,6 +49,16 @@ export const getDocument = async (req, res) => {
     }
 }
 
+export const updateDocument = async (req, res) => {
+    const { docId, aiResponse } = req.body;
+    try{
+        const updateDoc = await codeReviewModel.replaceOne({ _id: docId }, aiResponse);
+        res.status(200).send({ msg: 'Document updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(400).send({ msg: 'Error while updating document' })
+    }
+}
 
 export const getAllResponses = async (req, res) => {
     try {
@@ -65,7 +75,6 @@ export const getUserHistory = async (req, res) => {
     try {
         const responses = await codeReviewModel.find({ userId: userId }).select("_id title action updatedAt");
 
-        console.log("User history : ", responses)
         res.status(200).send({ responses });
     } catch (error) {
         console.error(error);
