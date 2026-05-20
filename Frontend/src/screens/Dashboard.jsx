@@ -12,14 +12,14 @@ const Dashboard = () => {
     const [userId, setUserId] = useState(() => {
         return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))._id : null
     }); // Simulated logged-in user ID
-    
+
     const [code, setCode] = useState("");
     const [output, setOutput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [activeAction, setActiveAction] = useState(null);
     const [isCopied, setIsCopied] = useState(false);
     const [responses, setResponses] = useState({});
-       
+
     // New Sidebar State
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -27,113 +27,167 @@ const Dashboard = () => {
 
     const [MOCK_HISTORY, setMOCK_HISTORY] = useState([]);
 
-
+    // FETCH USER HISTORY ON LOAD AND AFTER EACH REVIEW
     useEffect(() => {
         const fetchHistory = async () => {
             try {
                 const res = await axios.get('/ai/getHistory');
                 setMOCK_HISTORY(res.data.responses);
             } catch (error) {
-                console.error("Error fetching user history:", error);
+                console.error("Error fetching history:", error);
             }
-        }
+        };
         fetchHistory();
     }, []);
 
+    // UPDATE HISTORY STATE AFTER REVIEW OR DOCUMENT UPDATE
+    const updateHistoryState = (newData) => {
+        setMOCK_HISTORY((prev) => {
+            const exists = prev.find(
+                (item) => item._id === newData._id
+            );
+            // Update existing document
+            if (exists) {
+                return prev.map((item) =>
+                    item._id === newData._id
+                        ? newData
+                        : item
+                );
+            }
+            // Add new document
+            return [newData, ...prev];
+        });
+    };
+
+    // UPDATE UI STATE WITH NEW RESPONSE
+    const updateUI = (data) => {
+        setResponses(data);
+        setCode(data.prompt);
+        setOutput(data.text);
+        setIsLoading(false);
+
+        updateHistoryState(data);
+    };
+
+    // HANDLE HISTORY MODIFICATION - CHECK IF PROMPT HAS SIGNIFICANT CHANGES
     const handlehistoryModification = (oldPrompt, newPrompt) => {
         let spl1 = oldPrompt.split(" ");
         let spl2 = newPrompt.split(" ");
 
-        let filterOldPrompt = spl2.filter(item => item.length > 0);
-        let isMatch = spl1.length == filterOldPrompt.length && spl1.every((val, i) => val == filterOldPrompt[i]);
+        let filterOldPrompt = spl1.filter(
+            (item) => item.length > 0
+        );
+        let filterNewPrompt = spl2.filter(
+            (item) => item.length > 0
+        );
+
+        let isMatch =
+            filterOldPrompt.length === filterNewPrompt.length &&
+            filterOldPrompt.every(
+                (val, i) => val === filterNewPrompt[i]
+            );
 
         return isMatch;
-    }
+    };
 
+    // HANDLE REVIEW CODE ACTION
     const handleReviewCode = async () => {
-        if (!activeHistoryId) {
-            const generateResponse = async () => {
-                const res = await axios.post('/ai/getAiResult', { prompt: code });
-                console.log("AI response : ", res.data.response)
-                setResponses(res.data.response);
-                setIsLoading(false);
-                setCode(res.data.response.prompt);
-                setOutput(res.data.response.text);
-                setResponses(res.data.response);
+        try {
+            setIsLoading(true);
+
+            // new document - directly fetch AI response
+            if (!activeHistoryId) {
+                const res = await axios.post(
+                    '/ai/getAiResult',
+                    { prompt: code }
+                );
+
+                console.log("AI response:", res.data.response);
+
+                updateUI(res.data.response);
+                setActiveHistoryId(res.data.response._id);
+                return;
+            }
+
+            // existing document - check if prompt is modified or not
+            const isSamePrompt = handlehistoryModification(
+                responses.prompt,
+                code
+            );
+
+            // same code - fetch existing document
+            if (isSamePrompt) {
+                const res = await axios.post(
+                    '/ai/getDocument',
+                    { documentId: activeHistoryId }
+                );
+
+                console.log("Fetched existing doc:", res.data.response);
+
+                updateUI(res.data.response);
+            }
+
+            // modified code - fetch new AI response and update existing document
+            else {
+                const res = await axios.post(
+                    '/ai/getAiResult',
+                    { prompt: code }
+                );
+
+                console.log("Updated AI response:", res.data.response);
+
+                updateUI(res.data.response);
                 setActiveHistoryId(res.data.response._id);
             }
-            generateResponse();
-            console.log("Code responses : ", responses)
+        } catch (error) {
+            console.error("Review Error:", error);
+        } finally {
+            setIsLoading(false);
         }
-        else {
-            if (handlehistoryModification(responses.prompt, code)) {
-                const getResponse = async () => {
-                    const res = await axios.post('/ai/getDocument', { documentId: activeHistoryId });
-                    console.log("AI response : ", res.data.response)
-                    setResponses(res.data.response);
-                    setIsLoading(false);
-                    setCode(res.data.response.prompt);
-                    setOutput(res.data.response.text);
-                    setResponses(res.data.response);
-                }
-                getResponse();
-            }
-            else {
-                const generateResponse = async () => {
-                    const res = await axios.post('/ai/getAiResult', { prompt: code });
-                    console.log("AI response : ", res.data.response)
-                    setResponses(res.data.response);
-                    setIsLoading(false);
-                    setCode(res.data.response.prompt);
-                    setOutput(res.data.response.text);
-                    setResponses(res.data.response);
-                    setActiveHistoryId(res.data.response._id);
-                }
-                generateResponse();
-                console.log("Code responses : ", responses)
-            }
-        }
-    }
+    };
 
-    // Filter history based on search
-    const filteredHistory = MOCK_HISTORY.filter(item =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // FILTERED HISTORY
+    const filteredHistory = MOCK_HISTORY.filter((item) =>
+        item.title
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase())
+    )
+        .sort(
+            (a, b) =>
+                new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
 
-    // Mock API Call Handler
+    // HANDLE ACTION BUTTON CLICKS (EXPLAIN, FIX BUGS, OPTIMIZE)
     const handleAction = (actionName) => {
         if (!code.trim()) return;
 
         setIsLoading(true);
         setActiveAction(actionName);
-        console.log(`Action triggered: ${actionName}`);
-        console.log("Response action exist : ", responses.suggestions[actionName])
 
         // Simulate API delay
         setTimeout(() => {
             setIsLoading(false);
-            // setActiveAction(null);
-
             setOutput(responses.suggestions[actionName]);
         }, 2000);
     };
 
+    // HANDLE CODE COPY
     const handleCopy = () => {
         navigator.clipboard.writeText(responses.suggestions.optimizatedCode);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
     };
 
+    // HANDLE HISTORY ITEM CLICK
     const loadHistoryItem = (item) => {
         setActiveHistoryId(item._id);
 
         const fetchHistoryItem = async () => {
-            console.log("Fetching document for history item : ", item._id)
             const doc = await axios.post('/ai/getAiDocument', { documentId: item._id });
             setResponses(doc.data.response);
             setCode(doc.data.response.prompt);
             setOutput(doc.data.response.text);
-            console.log("Loaded history item : ", doc.data.response)
+            setIsLoading(false);
         }
         fetchHistoryItem();
     };
@@ -238,9 +292,23 @@ const Dashboard = () => {
 
                     {/* LEFT PANEL: Code Input */}
                     <section className="flex-1 flex flex-col border-r border-slate-200 min-w-0 lg:w-1/2 h-1/2 lg:h-full">
-                        <div className="h-12 border-b border-slate-200 bg-slate-50/80 backdrop-blur flex items-center px-4 shrink-0">
-                            <Code2 className="w-4 h-4 text-slate-500 mr-2" />
-                            <h2 className="text-sm font-semibold text-slate-700">Code Input</h2>
+                        <div className="h-12 border-b border-slate-200 bg-slate-50/80 backdrop-blur flex items-center justify-between px-4 shrink-0">
+                            <div>
+                                <Code2 className="w-4 h-4 text-slate-500 mr-2" />
+                                <h2 className="text-sm font-semibold text-slate-700">Code Input</h2>
+                            </div>
+                            <Button
+                                onClick={() => {
+                                    handleAction('reviewCode')
+                                    handleReviewCode();
+                                }
+                                }
+                                disabled={isLoading || !code || !responses.suggestions?.reviewCode}
+                                className="cursor-pointer"
+                            >
+                                {activeAction === 'reviewCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                                Review
+                            </Button>
                         </div>
 
                         <div className="flex-1 p-4 flex flex-col overflow-hidden">
@@ -266,21 +334,22 @@ const Dashboard = () => {
                             {/* Action Buttons */}
                             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 pt-4 shrink-0">
                                 <Button
+                                    variant="outline"
                                     onClick={() => {
                                         handleAction('reviewCode')
-                                        handleReviewCode();
                                     }
                                     }
                                     disabled={isLoading || !code || !responses.suggestions?.reviewCode}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                                    className="cursor-pointer"
                                 >
-                                    {activeAction === 'reviewCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                                    {activeAction === 'reviewCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Play className="w-4 h-4 mr-2 text-slate-500" />}
                                     Review
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => handleAction('explainCode')}
                                     disabled={isLoading || !code || !responses.suggestions?.explainCode}
+                                    className="cursor-pointer"
                                 >
                                     {activeAction === 'explainCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Sparkles className="w-4 h-4 mr-2 text-slate-500" />}
                                     Explain
@@ -289,6 +358,7 @@ const Dashboard = () => {
                                     variant="outline"
                                     onClick={() => handleAction('fixBugs')}
                                     disabled={isLoading || !code || !responses.suggestions?.fixBugs}
+                                    className="cursor-pointer"
                                 >
                                     {activeAction === 'fixBugs' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Bug className="w-4 h-4 mr-2 text-slate-500" />}
                                     Fix Bugs
@@ -297,6 +367,7 @@ const Dashboard = () => {
                                     variant="outline"
                                     onClick={() => handleAction('optimization')}
                                     disabled={isLoading || !code || !responses.suggestions?.optimization}
+                                    className="cursor-pointer"
                                 >
                                     {activeAction === 'optimization' ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" /> : <Zap className="w-4 h-4 mr-2 text-slate-500" />}
                                     Optimize
@@ -359,8 +430,7 @@ const Dashboard = () => {
                                                 <textarea
                                                     value={responses.suggestions.optimizatedCode || ""}
                                                     readOnly
-                                                    // placeholder="Paste your code here..."
-                                                    className="flex-1 w-full bg-transparent text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0"
+                                                    className="w-full min-h-25 h-auto bg-transparent text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0 overflow-hidden"
                                                     spellCheck="false"
                                                 />
                                             </div>
