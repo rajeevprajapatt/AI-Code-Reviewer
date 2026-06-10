@@ -29,7 +29,7 @@ export const generateResponse = async (req, res) => {
         })
 
         console.log("saved response : ", savedResponse)
-        res.status(200).send({ response })
+        res.status(200).send({ response: savedResponse })
     } catch (error) {
         console.error(error);
         res.status(400).send({ msg: 'Error while generating response' })
