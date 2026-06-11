@@ -74,7 +74,7 @@ const CodeReviewerLanding = () => {
                 <div className="container mx-auto px-4 text-center">
                     <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-600 mb-8">
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Powered by GPT-4 Developer Edition
+                        AI-Powered Code Reviews
                     </div>
                     <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 text-slate-900">
                         Review Your Code with <br className="hidden md:block" />
