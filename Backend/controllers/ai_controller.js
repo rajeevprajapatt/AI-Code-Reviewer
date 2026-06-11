@@ -28,7 +28,6 @@ export const generateResponse = async (req, res) => {
             } : null
         })
 
-        console.log("saved response : ", savedResponse)
         res.status(200).send({ response: savedResponse })
     } catch (error) {
         console.error(error);
@@ -37,7 +36,7 @@ export const generateResponse = async (req, res) => {
 }
 
 export const getDocument = async (req, res) => {
-    const { documentId } = req.body;
+    const { documentId } = req.query;
 
     try {
         const document = await codeReviewModel.findById(documentId);
