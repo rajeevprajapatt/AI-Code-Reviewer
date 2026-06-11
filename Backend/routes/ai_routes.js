@@ -4,10 +4,10 @@ import * as userAuth from '../middlewares/auth.js'
 
 const router = express.Router();
 
-router.post('/getAiResult', userAuth.authMiddleware,aiController.generateResponse)
-router.post('/getAiDocument', userAuth.authMiddleware, aiController.getDocument)
+router.post('/getAiResult', userAuth.authMiddleware, aiController.generateResponse)
+router.get('/getAiDocument', userAuth.authMiddleware, aiController.getDocument)
 
-router.get('/getAllResponses', aiController.getAllResponses)
+router.get('/getAllResponses', userAuth.authMiddleware, aiController.getAllResponses)
 
 router.get('/getHistory', userAuth.authMiddleware, aiController.getUserHistory)
 
