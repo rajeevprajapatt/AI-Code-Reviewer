@@ -105,8 +105,10 @@ const Dashboard = () => {
 
             // Existing review is still valid
             if (isSamePrompt) {
-                const res = await axios.post('/ai/getAiDocument', {
-                    documentId: activeHistoryId,
+                const res = await axios.get('/ai/getAiDocument', {
+                    params: {
+                        documentId: activeHistoryId,
+                    },
                 });
 
                 updateUI(res.data.response);
@@ -172,7 +174,11 @@ const Dashboard = () => {
             return;
         }
 
-        const res = await axios.post('/ai/getAiDocument', { documentId: item._id });
+        const res = await axios.get('/ai/getAiDocument', {
+            params: {
+                documentId: item._id,
+            },
+        });
 
         historyRef.current[item._id] = res.data;
 
@@ -289,14 +295,11 @@ const Dashboard = () => {
                             </div>
                             <Button
                                 onClick={() => {
-                                    // handleAction('reviewCode')
                                     handleReviewCode();
                                 }
                                 }
-                                // disabled={isLoading || !code || !responses.suggestions?.reviewCode}
                                 className="cursor-pointer"
                             >
-                                {/* {activeAction === 'reviewCode' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />} */}
                                 <BrainCircuit className="w-4 h-4 mr-2" />Analyze
                             </Button>
                         </div>
@@ -409,7 +412,7 @@ const Dashboard = () => {
                                     <div className='pt-7' />
                                     {activeAction == 'optimization' &&
                                         <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 md:p-6 shadow-sm">
-                                            <p className='pb-2'>Optiomized Code</p>
+                                            <p className='pb-2'>Optimized Code</p>
                                             <div className="flex-1 rounded-lg border border-slate-200 overflow-hidden bg-[#1e1e1e] shadow-inner flex flex-col">
                                                 <div className="h-8 bg-[#2d2d2d] flex items-center px-3 gap-1.5 shrink-0 border-b border-[#3d3d3d]">
                                                     <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
@@ -467,17 +470,7 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
     );
 };
 
-// --- Mock History Data ---
-// const MOCK_HISTORY = [
-//     { id: 1, title: 'Auth Component Bug Fix', time: '10 mins ago', action: 'Fix Bugs' },
-//     { id: 2, title: 'Data Sorting Algorithm', time: '2 hours ago', action: 'Optimize Code' },
-//     { id: 3, title: 'React Navbar Review', time: 'Yesterday', action: 'Review Code' },
-//     { id: 4, title: 'API Fetch Explanation', time: '2 days ago', action: 'Explain Code' },
-//     { id: 5, title: 'Legacy User Model', time: 'Last week', action: 'Review Code' },
-// ];
-
 function timeAgo(timestamp) {
-    // console.log(timestamp)
     const now = new Date();
     const past = new Date(timestamp);
 
