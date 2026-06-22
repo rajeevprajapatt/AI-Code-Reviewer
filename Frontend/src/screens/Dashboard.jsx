@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from '../config/AxiosInstance';
 import {
     Sparkles, Code2, Play, Bug, Zap, Copy, Check, Loader2, ArrowRight,
@@ -10,6 +10,8 @@ import {
 // --- Main App Interface ---
 
 const Dashboard = () => {
+    const navigate = useNavigate();
+
     const [userId, setUserId] = useState(() => {
         return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))._id : null
     }); // Simulated logged-in user ID
@@ -31,16 +33,33 @@ const Dashboard = () => {
 
     // FETCH USER HISTORY ON LOAD AND AFTER EACH REVIEW
     useEffect(() => {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            console.warn('No token found. Redirecting to login.');
+            navigate('/login');
+            return;
+        }
+
+        let isMounted = true;
+
         const fetchHistory = async () => {
             try {
                 const res = await axios.get('/ai/getHistory');
-                setMOCK_HISTORY(res.data.responses);
+                if (isMounted) {
+                    setMOCK_HISTORY(res?.data?.responses || []);
+                }
             } catch (error) {
-                console.error("Error fetching history:", error);
+                console.error('getHistory failed:', error.response?.status, error.response?.data || error.message);
             }
         };
+
         fetchHistory();
-    }, []);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [navigate]);
 
     // UPDATE HISTORY STATE AFTER REVIEW OR DOCUMENT UPDATE
     const updateHistoryState = (newData) => {
