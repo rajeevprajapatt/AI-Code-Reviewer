@@ -14,8 +14,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors());
 const allowedOrigins = [
-  "https://sleekreview.vercel.app/",
-  "https://sleekreview-git-main-rajeevprajapat43-gmailcoms-projects.vercel.app/"  // Vercel preview URL
+  "https://sleekreview.vercel.app",
+  "https://sleekreview-git-main-rajeevprajapat43-gmailcoms-projects.vercel.app"  // Vercel preview URL
 ];
 
 app.use(cors({
