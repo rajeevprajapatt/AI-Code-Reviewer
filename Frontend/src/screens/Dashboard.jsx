@@ -430,7 +430,7 @@ const Dashboard = () => {
                                     </div>
                                     <div className='pt-7' />
                                     {activeAction == 'optimization' &&
-                                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 md:p-6 shadow-sm">
+                                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 md:px-4 md:py-2 shadow-sm">
                                             <p className='pb-2'>Optimized Code</p>
                                             <div className="flex-1 rounded-lg border border-slate-200 overflow-hidden bg-[#1e1e1e] shadow-inner flex flex-col">
                                                 <div className="h-8 bg-[#2d2d2d] flex items-center px-3 gap-1.5 shrink-0 border-b border-[#3d3d3d]">
@@ -442,7 +442,7 @@ const Dashboard = () => {
                                                 <textarea
                                                     value={responses.suggestions.optimizatedCode || ""}
                                                     readOnly
-                                                    className="w-full min-h-25 h-auto bg-transparent text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0 overflow-hidden"
+                                                    className="w-full hide-scrollbar min-h-98 bg-transparent text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0 overflow-y-auto"
                                                     spellCheck="false"
                                                 />
                                             </div>
