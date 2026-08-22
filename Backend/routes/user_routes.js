@@ -13,4 +13,6 @@ router.get('/allUsers', auth.authMiddleware, userController.getAllUsers)
 
 router.post('/getUserByEmail', userController.getUserByEmail)
 
+// router.patch('/updatePassword',userController.updatePassword)
+
 export default router;
