@@ -65,3 +65,7 @@ export const getUserByEmail = async (req, res) => {
         res.status(400).send({ msg: 'No user found' })
     }
 }
+
+// export const updatePassword = async(req,res) =>{
+//     const {email} = req.body;
+// }
