@@ -17,7 +17,7 @@ export const sendMail = async ({ email, emailSubject, mailBody }) => {
             from: `"Sleek Review" <${process.env.AUTH_EMAIL}>`, // sender address
             to: email, // list of recipients
             subject: emailSubject, // subject line
-            text: mailBody, // plain text body
+            html: mailBody, // HTML body
         });
 
         console.log("Email sent: ", info.messageId);
