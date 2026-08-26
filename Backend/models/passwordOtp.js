@@ -15,6 +15,10 @@ const passwordOtpSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
     expires: 60 // OTP expires after 1 minute (60 seconds)
+  },
+  verifiedAt: {
+    type: Date,
+    default: null
   }
 })
 
