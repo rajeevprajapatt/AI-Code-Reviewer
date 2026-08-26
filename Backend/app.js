@@ -6,6 +6,7 @@ dotenv.config();
 import connectDB from './database.js';
 import userRoutes from './routes/user_routes.js';
 import aiRoutes from './routes/ai_routes.js';
+import updateRoutes from './routes/update_routes.js';
 
 const app = express();
 connectDB();
@@ -39,8 +40,28 @@ app.get('/', (req, res) => {
 });
 app.use('/user', userRoutes)
 app.use('/ai', aiRoutes)
+app.use('/update', updateRoutes)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
+
+
+
+
+//app.post('/send-email', async (req, res) => {
+//     const { email, emailSubject, mailBody } = req.body;
+
+//     console.log("Received email request:", { email, emailSubject, mailBody });
+
+//     try {
+//         await sendMail({ email, emailSubject, mailBody });
+//         res.status(200).send({ msg: 'Email sent successfully' });
+//     } catch (error) {
+//         console.error("Error sending email: ", error);
+//         res.status(500).send({ error: 'Error sending email' });
+//     }
+// });
