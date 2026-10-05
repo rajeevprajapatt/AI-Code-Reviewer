@@ -169,6 +169,49 @@ export const getUserByEmail = async (req, res) => {
     }
 }
 
+export const getProfile = async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.user.email }).select('name email');
+
+        if (!user) {
+            return res.status(404).json({ msg: 'No user found' });
+        }
+
+        return res.status(200).json({ user });
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        return res.status(500).json({ msg: 'Unable to fetch profile' });
+    }
+}
+
+export const updateProfile = async (req, res) => {
+    if (Object.prototype.hasOwnProperty.call(req.body, 'email')) {
+        return res.status(400).json({ msg: 'Email cannot be changed' });
+    }
+
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+
+    if (!name) {
+        return res.status(400).json({ msg: 'Name is required' });
+    }
+
+    try {
+        const user = await User.findOne({ email: req.user.email }).select('name email');
+
+        if (!user) {
+            return res.status(404).json({ msg: 'No user found' });
+        }
+
+        user.name = name;
+        await user.save();
+
+        return res.status(200).json({ user });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        return res.status(500).json({ msg: 'Unable to update profile' });
+    }
+}
+
 // export const updatePassword = async(req,res) =>{
 //     const {email} = req.body;
 // }
