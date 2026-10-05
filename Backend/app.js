@@ -1,12 +1,18 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import cluster from 'cluster';
+import { availableParallelism } from 'os';
+import process from 'process';
 dotenv.config();
 
 import connectDB from './database.js';
 import userRoutes from './routes/user_routes.js';
 import aiRoutes from './routes/ai_routes.js';
 import updateRoutes from './routes/update_routes.js';
+
+const numCPUs = availableParallelism();
+// console.log(numCPUs);
 
 const app = express();
 connectDB();
@@ -41,6 +47,9 @@ app.get('/', (req, res) => {
 app.use('/user', userRoutes)
 app.use('/ai', aiRoutes)
 app.use('/update', updateRoutes)
+app.get('/ping', (req, res) => {
+    res.send('Server is alive and running!');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -52,16 +61,36 @@ app.listen(PORT, () => {
 
 
 
-//app.post('/send-email', async (req, res) => {
-//     const { email, emailSubject, mailBody } = req.body;
 
-//     console.log("Received email request:", { email, emailSubject, mailBody });
+// if (cluster.isPrimary) {
+//   console.log(`Primary ${process.pid} is running`);
 
-//     try {
-//         await sendMail({ email, emailSubject, mailBody });
-//         res.status(200).send({ msg: 'Email sent successfully' });
-//     } catch (error) {
-//         console.error("Error sending email: ", error);
-//         res.status(500).send({ error: 'Error sending email' });
-//     }
-// });
+//   // Fork workers.
+//   for (let i = 0; i < numCPUs; i++) {
+//     cluster.fork();
+//   }
+
+//   cluster.on('exit', (worker, code, signal) => {
+//     console.log(`worker ${worker.process.pid} died`);
+//   });
+// } else {
+
+//   const app = express();
+//   connectDB();
+
+//   app.use(express.json());
+//   app.use(express.urlencoded({ extended: true }));
+//   app.use(cors());
+  
+//   app.get('/', (req, res) => {
+//     res.send('Hello World!');
+//   });
+//   app.use('/user', userRoutes)
+//   app.use('/ai', aiRoutes)
+//   app.use('/update', updateRoutes)
+
+//   const PORT = process.env.PORT || 3000;
+//   app.listen(PORT, () => {
+//     console.log(`Server is running on port ${PORT}`);
+//   });
+// }
