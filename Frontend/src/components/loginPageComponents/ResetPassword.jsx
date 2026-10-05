@@ -3,16 +3,25 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Lock, Sparkles } from 'lucide-reac
 import { useForm } from 'react-hook-form';
 
 import { Button, Card, Input, Label } from '../UIcomponents';
+import AxiosInstance from '../../config/AxiosInstance';
 
-const ResetPassword = ({ onSubmit, onBack }) => {
+const ResetPassword = ({ email, onSubmit, onBack }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const { register, handleSubmit, watch, formState: { errors } } = useForm();
     const password = watch('password');
 
     const submit = async (data) => {
         setIsLoading(true);
-        await onSubmit(data);
-        setIsLoading(false);
+        setErrorMessage('');
+        try {
+            await AxiosInstance.patch('/update/updatePassword', { email, password: data.password });
+            onSubmit();
+        } catch (error) {
+            setErrorMessage(error.response?.data?.msg || 'Unable to reset password. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -42,6 +51,7 @@ const ResetPassword = ({ onSubmit, onBack }) => {
                         </div>
                         {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword.message || 'Please confirm your password.'}</p>}
                     </div>
+                    {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
                     <Button type="submit" disabled={isLoading} className="mt-2 bg-blue-600 text-white hover:bg-blue-700">
                         {isLoading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <>Reset password <ArrowRight className="ml-2 h-4 w-4" /></>}
                     </Button>
