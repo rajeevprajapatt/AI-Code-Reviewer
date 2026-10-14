@@ -18,24 +18,30 @@ const LoginComponent = ({ onForgotPassword }) => {
 
     const [isLoading, setIsLoading] = useState(false);
     const { user, setUser } = useContext(UserContext);
-    const [forgetPasswordCard, setForgetPasswordCard] = useState(false);
-    const [error,setError] = useState("");
-    // const [otpCard, setOtpCard] = useState(false);
-    // const [otpVerified, setOtpVerified] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
-        if (localStorage.getItem('token')) {
-            navigate('/')
-        }
-    }, []);
+        const checkAuth = async () => {
+            try {
+                const response = await axios.get("/user/auth/me");
+
+                if (response.data.user) {
+                    setUser(response.data.user);
+                    navigate("/", { replace: true });
+                }
+            } catch (error) {
+                if (error.response?.status !== 401) {
+                    console.error("Error checking authentication:", error);
+                }
+            }
+        };
+
+        checkAuth();
+    }, [navigate, setUser]);
 
     const onSubmit = async (data) => {
         try {
             const response = await axios.post('/user/login', data);
-
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-
             setUser(response.data.user);
             navigate('/');
         } catch (error) {
