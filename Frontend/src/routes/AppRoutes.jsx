@@ -5,6 +5,7 @@ import Home from '../screens/Home'
 import Login from '../screens/Login'
 import Register from '../screens/Register'
 import Dashboard from '../screens/Dashboard'
+import Profile from '../screens/Profile'
 
 const AppRoutes = () => {
     return (
@@ -14,6 +15,7 @@ const AppRoutes = () => {
                 <Route path='/login' element={<Login />} />
                 <Route path='/register' element={<Register />} />
                 <Route path='/dashboard' element={<Dashboard />} />
+                <Route path='/profile' element={<Profile />} />
             </Routes>
         </Router>
     )
