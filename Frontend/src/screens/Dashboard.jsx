@@ -7,14 +7,12 @@ import {
     TestTube, BrainCircuit
 } from 'lucide-react';
 
+import { Button, Card, CardHeader, CardTitle, CardContent, Github, Instagram, Linkedin } from '../components/UIcomponents'
+
 // --- Main App Interface ---
 
 const Dashboard = () => {
     const navigate = useNavigate();
-
-    const [userId, setUserId] = useState(() => {
-        return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))._id : null
-    }); // Simulated logged-in user ID
 
     const [code, setCode] = useState("");
     const [output, setOutput] = useState("");
@@ -33,32 +31,37 @@ const Dashboard = () => {
 
     // FETCH USER HISTORY ON LOAD AND AFTER EACH REVIEW
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const controller = new AbortController();
 
-        if (!token) {
-            console.warn('No token found. Redirecting to login.');
-            navigate('/login');
-            return;
+        const loadData = async () => {
+            try {
+                const authResponse = await axios.get("/user/auth/me", { signal: controller.signal });
+                if (!authResponse.data.user) {
+                    navigate("/login");
+                    return;
+                }
+
+                const res = await axios.get("/ai/getHistory", {
+                    signal: controller.signal,
+                });
+
+                setMOCK_HISTORY(res?.data?.responses || []);
+            }
+            catch (error) {
+                if (error.code === "ERR_CANCELED") return;
+
+                if (error.response?.status === 401) {
+                    navigate("/login");
+                    return;
+                }
+
+                // console.error("Failed to load data:", error);
+            }
         }
 
-        let isMounted = true;
+        loadData();
 
-        const fetchHistory = async () => {
-            try {
-                const res = await axios.get('/ai/getHistory');
-                if (isMounted) {
-                    setMOCK_HISTORY(res?.data?.responses || []);
-                }
-            } catch (error) {
-                console.error('getHistory failed:', error.response?.status, error.response?.data || error.message);
-            }
-        };
-
-        fetchHistory();
-
-        return () => {
-            isMounted = false;
-        };
+        return () => controller.abort();
     }, [navigate]);
 
     // UPDATE HISTORY STATE AFTER REVIEW OR DOCUMENT UPDATE
@@ -87,11 +90,18 @@ const Dashboard = () => {
         setOutput(data.text);
         setIsLoading(false);
 
+
+        if (data._id) {
+            historyRef.current[data._id] = {
+                response: data,
+            };
+        }
+
         updateHistoryState(data);
     };
 
     const normalizeString = (str) => {
-        return str.toLowerCase().trim().replace(/\s+/g, ' ');
+        return String(str ?? "").toLowerCase().trim().replace(/\s+/g, ' ');
     }
 
     // HANDLE HISTORY MODIFICATION - CHECK IF PROMPT HAS SIGNIFICANT CHANGES
@@ -99,50 +109,44 @@ const Dashboard = () => {
         return normalizeString(oldPrompt) === normalizeString(newPrompt);
     };
 
+    const generateReview = async () => {
+        const res = await axios.post("/ai/getAiResult", {
+            prompt: code,
+        });
+
+        const data = res.data.response;
+
+        updateUI(data);
+        setActiveHistoryId(data._id);
+    };
+
     // HANDLE REVIEW CODE ACTION
     const handleReviewCode = async () => {
         try {
             setIsLoading(true);
 
-            // Case 1: User is reviewing code for the first time
             if (!activeHistoryId) {
-                const res = await axios.post('/ai/getAiResult', {
-                    prompt: code,
-                });
-
-                updateUI(res.data.response);
-                setActiveHistoryId(res.data.response._id);
-
+                await generateReview();
                 return;
             }
 
-            // Case 2: User reopened an existing document
             const isSamePrompt = handlehistoryModification(
                 responses.prompt,
                 code
             );
 
-            // Existing review is still valid
             if (isSamePrompt) {
-                const res = await axios.get('/ai/getAiDocument', {
-                    params: {
-                        documentId: activeHistoryId,
-                    },
+                const res = await axios.get("/ai/getAiDocument", {
+                    params: { documentId: activeHistoryId },
                 });
 
                 updateUI(res.data.response);
                 return;
             }
 
-            // Case 3: User modified the code, generate a new review
-            const res = await axios.post('/ai/getAiResult', {
-                prompt: code,
-            });
-
-            updateUI(res.data.response);
-            setActiveHistoryId(res.data.response._id);
+            await generateReview();
         } catch (error) {
-            console.error('Review Error:', error);
+            // console.error("Review Error:", error);
         } finally {
             setIsLoading(false);
         }
@@ -176,7 +180,8 @@ const Dashboard = () => {
 
     // HANDLE CODE COPY
     const handleCopy = () => {
-        navigator.clipboard.writeText(responses.suggestions.optimizatedCode);
+        navigator.clipboard.writeText(String(responses.suggestions.optimizatedCode ?? ""));
+
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
     };
@@ -185,27 +190,32 @@ const Dashboard = () => {
     const loadHistoryItem = async (item) => {
         setActiveHistoryId(item._id);
 
-        if (historyRef.current[item._id]) {
-            const data = historyRef.current[item._id];
-            setResponses(data.response);
-            setCode(data.response.prompt);
-            setOutput(data.response.text);
+        const cached = historyRef.current[item._id];
+
+        if (cached?.response) {
+            updateUI(cached.response);
             return;
         }
 
-        const res = await axios.get('/ai/getAiDocument', {
-            params: {
-                documentId: item._id,
-            },
-        });
+        try {
+            setIsLoading(true);
 
-        historyRef.current[item._id] = res.data;
+            const res = await axios.get("/ai/getAiDocument", {
+                params: {
+                    documentId: item._id,
+                },
+            });
 
-        setResponses(res.data.response);
-        setCode(res.data.response.prompt);
-        setOutput(res.data.response.text);
-        setIsLoading(false);
+            const data = res.data;
+            historyRef.current[item._id] = data;
+            updateUI(data.response);
+        } catch (error) {
+            // console.error("Failed to load history:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
 
     return (
         <div className="flex flex-col h-screen bg-slate-50 font-sans selection:bg-blue-200 overflow-hidden">
@@ -460,83 +470,3 @@ const Dashboard = () => {
 }
 
 export default Dashboard;
-
-
-
-
-
-// --- Reused shadcn/ui Components ---
-
-const Button = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
-    const base = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50";
-    const variants = {
-        default: "bg-slate-900 text-white hover:bg-slate-900/90 shadow-sm",
-        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80",
-        outline: "border border-slate-200 bg-transparent hover:bg-slate-50 text-slate-900",
-        ghost: "hover:bg-slate-100 hover:text-slate-900",
-        soft: "bg-blue-50 text-blue-700 hover:bg-blue-100", // Added for active sidebar items
-    };
-    const sizes = {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-9 w-9", // Adjusted for header icons
-    };
-    return (
-        <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
-            {children}
-        </button>
-    );
-};
-
-function timeAgo(timestamp) {
-    const now = new Date();
-    const past = new Date(timestamp);
-
-    const diffInSeconds = Math.floor((now - past) / 1000);
-
-    const minute = 60;
-    const hour = 60 * minute;
-    const day = 24 * hour;
-    const week = 7 * day;
-    const month = 30 * day;
-
-    if (diffInSeconds < minute) {
-        return `${diffInSeconds} sec ago`;
-    }
-
-    if (diffInSeconds < hour) {
-        const mins = Math.floor(diffInSeconds / minute);
-        return `${mins} min ago`;
-    }
-
-    if (diffInSeconds < day) {
-        const hours = Math.floor(diffInSeconds / hour);
-        return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-    }
-
-    if (diffInSeconds < 2 * day) {
-        return "Yesterday";
-    }
-
-    if (diffInSeconds < week) {
-        const days = Math.floor(diffInSeconds / day);
-        return `${days} days ago`;
-    }
-
-    if (diffInSeconds < 2 * week) {
-        return "Last week";
-    }
-
-    if (diffInSeconds < month) {
-        const weeks = Math.floor(diffInSeconds / week);
-        return `${weeks} weeks ago`;
-    }
-
-    if (diffInSeconds < 2 * month) {
-        return "Last month";
-    }
-
-    const months = Math.floor(diffInSeconds / month);
-    return `${months} months ago`;
-}
