@@ -74,7 +74,6 @@ export const generateResponse = async (prompt) => {
         }
         parsed.error = 0;
 
-        console.log("AI Response:", parsed);
         return parsed;
 
     } catch (error) {
