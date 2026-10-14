@@ -1,8 +1,6 @@
 import * as userService from '../services/user_service.js'
 import User from '../models/user.js';
 
-
-
 export const handleRegister = async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -119,7 +117,15 @@ export const handleRegister = async (req, res) => {
           `,
         });
 
-        res.status(200).json({ user, token })
+        res.cookie('accessToken', token, {
+            httpOnly: true,
+            secure: isProduction,
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            sameSite: isProduction ? 'None' : 'Lax',
+            path: '/'
+        })
+
+        return res.status(200).json({ user})
     } catch (error) {
         console.error("Error creating user: ", error);
         return res.status(500).send({ error: 'Error creating user' });
@@ -137,12 +143,21 @@ export const handleLogin = async (req, res) => {
         if (!isMatch) return res.status(400).send({ msg: 'Invalid Credentials' })
 
         const token = await user.generateJWT();
+        const isProduction = process.env.NODE_ENV === "production";
 
         delete user._doc.password
-        res.status(200).send({ user, token })
+
+        res.cookie('accessToken', token, {
+            httpOnly: true,
+            secure: isProduction, // Set to true in production
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            sameSite: isProduction ? 'None' : 'Lax', // Use 'None' for cross-site cookies in production
+            path: '/'
+        })
+        return res.status(200).send({ user })
     } catch (error) {
         console.error(error)
-        res.status(400).send({ msg: 'No user found' })
+        return res.status(400).send({ msg: 'No user found' })
     }
 }
 
@@ -212,6 +227,31 @@ export const updateProfile = async (req, res) => {
     }
 }
 
-// export const updatePassword = async(req,res) =>{
-//     const {email} = req.body;
-// }
+export const authMe = async (req, res) => {
+    const user = await User.findOne({ email: req.user.email })
+        .select("-password");
+
+    if (!user) {
+        return res.status(401).json({
+            message: "User not found",
+        });
+    }
+
+    res.status(200).json({ user });
+}
+
+export const handleLogout = async (req, res) => {
+    try {
+        res.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Set to true in production
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Use 'None' for cross-site cookies in production
+            path: '/'
+        });
+
+        return res.status(200).json({ message: 'Logout successful' });
+    } catch (error) {
+        console.error('Error logging out:', error);
+        return res.status(500).json({ message: 'Logout failed' });
+    }
+}
