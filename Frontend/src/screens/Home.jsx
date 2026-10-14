@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 import {
     Code2, Zap, CheckCircle2, ShieldCheck,
     Terminal, Sparkles, ChevronRight
 } from 'lucide-react';
+import axios from '../config/AxiosInstance';
+
+import { Button, Card, CardHeader, CardTitle, CardContent, Github, Instagram, Linkedin } from '../components/UIcomponents'
+// import AvatarImage from '../assets/defaultAvatar.jpg'
 
 
 // --- Main Landing Page Component ---
@@ -13,8 +18,23 @@ const CodeReviewerLanding = () => {
     const [demoCode, setDemoCode] = useState("function calculateTotal(arr) {\n  let total = 0;\n  for(let i = 0; i <= arr.length; i++) {\n    total += arr[i];\n  }\n  return total;\n}");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [demoResult, setDemoResult] = useState(null);
+    const [isLogin, setIsLogin] = useState(false);
 
-    const isLogin = localStorage.getItem("user") ? true : false;
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const response = await axios.get("/user/auth/me");
+                if (response.data.user) {
+                    setIsLogin(true);
+                } else {
+                    setIsLogin(false);
+                }
+            } catch (error) {
+                ;
+            }
+        };
+        checkAuth();
+    }, []);
 
     const handleDemoSubmit = () => {
         setIsAnalyzing(true);
@@ -33,40 +53,7 @@ const CodeReviewerLanding = () => {
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-200">
 
             {/* Navigation */}
-            <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xl font-bold tracking-tighter">
-                        <Sparkles className="h-6 w-6 text-blue-600" />
-                        <span>SleekReview</span>
-                    </div>
-                    <div className="hidden md:flex gap-6 text-sm font-medium text-slate-600">
-                        <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-                        <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How it Works</a>
-                        <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
-                    </div>
-                    <div className="flex gap-4">{
-                        !isLogin && <>
-                            <Button variant="ghost" className="hidden sm:inline-flex">
-                                <Link to="/login">Sign In</Link>
-                            </Button>
-                            <Button>
-                                <Link to="/register">Get Started</Link>
-                            </Button>
-                        </>
-                    }
-                        {
-                            isLogin && <Button variant="outline" onClick={() => {
-                                localStorage.removeItem("token");
-                                localStorage.removeItem("user");
-                                window.location.reload();
-                            }}>
-                                LogOut
-                            </Button>
-                        }
-
-                    </div>
-                </div>
-            </nav>
+            <Navbar isLogin={isLogin} setIsLogin={setIsLogin} />
 
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-24 pb-32">
@@ -287,7 +274,7 @@ const CodeReviewerLanding = () => {
                         </div>
                     </div>
                     <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-slate-100 text-sm text-slate-500">
-                        <p>© {new Date().getFullYear()} SleekReview. <br/>Crafted by{" "}
+                        <p>© {new Date().getFullYear()} SleekReview. <br />Crafted by{" "}
                             <span className="font-bold text-lg leading-[1.1] bg-linear-to-r from-[#F69D25] via-[#9529B1] to-[#F69D25] 
                  bg-clip-text text-transparent bg-size-[200%_200%] animate-textShine">
                                 <Link to="https://linkedin.com/in/rajeev-prajapat" target='_blank' rel='noreferrer'>
@@ -310,56 +297,56 @@ export default CodeReviewerLanding;
 
 
 
-const Button = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
-    const base = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50";
-    const variants = {
-        default: "bg-slate-900 text-white hover:bg-slate-900/90 shadow-sm",
-        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80",
-        outline: "border border-slate-200 bg-transparent hover:bg-slate-100 text-slate-900",
-        ghost: "hover:bg-slate-100 hover:text-slate-900",
-    };
-    const sizes = {
-        default: "h-10 px-4 py-2",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-    };
-    return (
-        <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
-            {children}
-        </button>
-    );
-};
+// const Button = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
+//     const base = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50";
+//     const variants = {
+//         default: "bg-slate-900 text-white hover:bg-slate-900/90 shadow-sm",
+//         secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80",
+//         outline: "border border-slate-200 bg-transparent hover:bg-slate-100 text-slate-900",
+//         ghost: "hover:bg-slate-100 hover:text-slate-900",
+//     };
+//     const sizes = {
+//         default: "h-10 px-4 py-2",
+//         lg: "h-11 rounded-md px-8",
+//         icon: "h-10 w-10",
+//     };
+//     return (
+//         <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
+//             {children}
+//         </button>
+//     );
+// };
 
-const Card = ({ className = '', children }) => (
-    <div className={`rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm ${className}`}>
-        {children}
-    </div>
-);
+// const Card = ({ className = '', children }) => (
+//     <div className={`rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm ${className}`}>
+//         {children}
+//     </div>
+// );
 
-const CardHeader = ({ className = '', children }) => (
-    <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
-);
+// const CardHeader = ({ className = '', children }) => (
+//     <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
+// );
 
-const CardTitle = ({ className = '', children }) => (
-    <h3 className={`font-semibold leading-none tracking-tight ${className}`}>{children}</h3>
-);
+// const CardTitle = ({ className = '', children }) => (
+//     <h3 className={`font-semibold leading-none tracking-tight ${className}`}>{children}</h3>
+// );
 
-const CardContent = ({ className = '', children }) => (
-    <div className={`p-6 pt-0 ${className}`}>{children}</div>
-);
+// const CardContent = ({ className = '', children }) => (
+//     <div className={`p-6 pt-0 ${className}`}>{children}</div>
+// );
 
-const Github = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.94-.81 1.76-1 2.5V22"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
-);
+// const Github = ({ className }) => (
+//     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.94-.81 1.76-1 2.5V22"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+// );
 
-const Twitter = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
-);
+// const Twitter = ({ className }) => (
+//     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
+// );
 
-const Instagram = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"></line></svg>
-);
+// const Instagram = ({ className }) => (
+//     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"></line></svg>
+// );
 
-const Linkedin = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-);
+// const Linkedin = ({ className }) => (
+//     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+// );
