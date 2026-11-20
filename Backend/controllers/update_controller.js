@@ -1,6 +1,7 @@
 import PasswordOtp from '../models/passwordOtp.js';
 import User from '../models/user.js';
 import { sendMail } from '../services/mailService.js';
+import mails from '../mailTemp.js';
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
@@ -25,89 +26,7 @@ export const sendOtp = async (req, res) => {
     await sendMail({
       email,
       emailSubject: 'Your password reset OTP',
-      mailBody: `
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SleekReview - Password Reset</title>
-    <!-- A small style block for email client resets that cannot be inlined -->
-    <style type="text/css">
-        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    </style>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f4f7f9; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333;">
-
-    <!-- Wrapper -->
-    <div style="width: 100%; background-color: #f4f7f9; padding: 40px 15px; box-sizing: border-box;">
-        
-        <!-- Container -->
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-            
-            <!-- Brand Header: Left Text, Right Logo -->
-            <div style="background-color: #111827; padding: 25px 30px;">
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr>
-                        <td align="left" valign="middle">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: 0.5px;">
-                                Sleek<span style="color: #3b82f6;">Review</span>
-                            </h1>
-                        </td>
-                        <td align="right" valign="middle">
-                            <!-- PASTE YOUR LOGO URL HERE -->
-                            <img src="https://cdn.postimage.me/2026/08/26/brain-circuit-1.png" alt="SleekReview Logo" width="80" style="display: block; max-width: 80px; height: auto; border: 0;" />
-                        </td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- Email Body -->
-            <div style="padding: 40px 30px; text-align: center;">
-                <!-- <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 22px; font-weight: 600;">
-                    Password Assistance
-                </h2> -->
-                
-                <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 10px 0; text-align: left;">
-                    Hi there,
-                </p>
-                
-                <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 24px 0; text-align: left;">
-                    We received a request to reset the password for your SleekReview account. Enter the following One-Time Password (OTP) to securely complete this process:
-                </p>
-                
-                <!-- The OTP Box -->
-                <div style="margin: 30px 0;">
-                    <div style="display: inline-block; background-color: #f3f4f6; border: 1px dashed #d1d5db; padding: 16px 32px; border-radius: 6px; font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #1d4ed8;">
-                        ${otp}
-                    </div> 
-                </div>
-
-                <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 24px 0; text-align: left;">
-                    This code is valid for the next <strong style="color: #111827;">10 minutes</strong>. If you are having issues, please try requesting a new code from the website.
-                </p>
-
-                <!-- Security Note -->
-                <div style="font-size: 14px; line-height: 1.5; color: #6b7280; background-color: #fdfbf7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 30px 0 0 0; text-align: left; border-radius: 4px;">
-                    <strong style="color: #4b5563;">Security Tip:</strong> SleekReview takes your account security seriously. We will never email you to ask for your password or credit card details. Never share this OTP with anyone. If you didn't request a password reset, you can safely ignore this email.
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div style="background-color: #f9fafb; padding: 24px; text-align: center; font-size: 13px; line-height: 1.5; color: #9ca3af; border-top: 1px solid #f3f4f6;">
-                <p style="margin: 0 0 10px 0;">
-                    &copy; 2026 SleekReview. All rights reserved.
-                </p>
-                <p style="margin: 0;">
-                    Need help? Contact our <a href="mailto:support@sleekreview.com" style="color: #3b82f6; text-decoration: none;">Support Team</a>.
-                </p>
-            </div>
-
-        </div>
-    </div>
-</body>
-</html>
-  `,
+      mailBody: mails.otp(otp),
     });
 
     return res.status(200).json({ msg: 'OTP sent successfully' });
