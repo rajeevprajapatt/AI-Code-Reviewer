@@ -1,27 +1,29 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // use STARTTLS (upgrade connection to TLS after connecting)
-    auth: {
-        user: process.env.AUTH_EMAIL,
-        pass: process.env.AUTH_PASS,
-    },
-});
+const createTransporter = (user, pass) => {
+    return nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user, pass },
+    });
+};
 
 export const sendMail = async ({ email, emailSubject, mailBody }) => {
-    try {
-        const info = await transporter.sendMail({
-            from: `"Sleek Review" <${process.env.AUTH_EMAIL}>`, // sender address
-            to: email, // list of recipients
-            subject: emailSubject, // subject line
-            html: mailBody, // HTML body
-        });
+    const user = process.env.EMAIL_USER?.trim();
+    const pass = process.env.EMAIL_PASS?.trim();
 
+    if (!user || !pass) {
+        throw new Error('Email credentials are missing. Set EMAIL_USER and EMAIL_PASS in the environment.');
     }
-    catch (error) {
-        console.error("Error sending email: ", error);
-    }
+
+    const transporter = createTransporter(user, pass);
+
+    return transporter.sendMail({
+        from: `"Sleek Review" <${user}>`,
+        to: email,
+        subject: emailSubject,
+        html: mailBody,
+    });
 }
